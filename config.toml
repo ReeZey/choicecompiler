@@ -1,0 +1,4 @@
+
+#   should always resolve correctly without changing. but if you have issues change this:
+#       default (%appdata%/YeahMaybe/ChoicerVoicer/game)
+game_path = "%appdata%/YeahMaybe/ChoicerVoicer/game"
