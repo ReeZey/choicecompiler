@@ -10,7 +10,7 @@ struct VoiceFile {
 #[derive(Deserialize, Debug)]
 struct VoiceData {
     caption: String,
-    image: String,
+    image: Option<String>,
     dub_timestamps: Vec<f32>,
     dub_characters: Vec<String>,
 }
@@ -108,6 +108,8 @@ fn convert(game_path: &str, selected: &str, date: &str, output_file: &str) {
     let original_path = format!("{}/packs_voice/{}", game_path, selected);
     let dubbed_path = format!("{}/recordings/dub_recordings/{}/{}", game_path, selected, date);
 
+    //TODO: find better way to do this
+    let mut backing_path = String::from("_backing_track.wav");
 
     let files = fs::read_dir(&original_path).unwrap();
 
@@ -119,39 +121,57 @@ fn convert(game_path: &str, selected: &str, date: &str, output_file: &str) {
             match path.extension() {
                 Some(ext) => {
                     match ext.to_str().unwrap() {
-                        "txt" => {
-                            let mut content = String::new();
-                            File::open(&path).unwrap().read_to_string(&mut content).unwrap();
-                            let voice: VoiceFile = toml::from_str(&content).unwrap();
+                        "txt" | "ini" => {
+                            if path.file_name().unwrap().to_string_lossy().to_string().starts_with(|p: char| !p.is_numeric()) { 
+                                //TODO: find better way to pattern match, currently just fucking sending it
+                                continue; 
+                            }
 
-                            println!("{:#?}", voice);
-                            voices.push((path.file_stem().unwrap().to_string_lossy().to_string(), voice));
+                            let mut content = String::new();
+                                File::open(&path).unwrap().read_to_string(&mut content).unwrap();
+                                let voice: VoiceFile = match toml::from_str(&content) {
+                                    Ok(ok) => ok,
+                                    Err(_e) => {
+                                        println!("{:?}", _e);
+                                        continue
+                                    }
+                                };
+
+                                //println!("{:#?}", voice);
+                                voices.push((path.file_stem().unwrap().to_string_lossy().to_string(), voice));
+
+                            
                         },
                         _ => { }
                     }
                 }
                 None => {}
             }
-            println!("{:?}", fil.file_name());
+
+            match path.file_stem().unwrap().to_str().unwrap() {
+                "_backing_track" => backing_path = fil.file_name().to_string_lossy().to_string(),
+                _ => {}
+            }
         }
     }
-
     
 
     let mut cmd = Command::new("ffmpeg");
     cmd.args(["-i", &format!("{}/dub_video.ogv", original_path)]);
-    cmd.args(["-i", &format!("{}/_backing_track.mp3", original_path)]);
+    cmd.args(["-i", &format!("{}/{}", original_path, backing_path)]);
 
     let mut filters = Vec::new();
     let mut labels = Vec::new();
 
     filters.push(
-        "[1:a]aresample=48000,volume=0.25[bg]".to_string()
+        "[1:a]aresample=48000,volume=1.0[bg]".to_string()
     );
     labels.push("[bg]".to_string());
 
     for (idx, (fil, _v)) in voices.iter().enumerate()  {
         let dubbed_file = format!("{}/_dubrecord_{}.wav", dubbed_path, fil);
+
+        //println!("{:?}", dubbed_file);
 
         cmd.args(["-i", &dubbed_file]);
 
