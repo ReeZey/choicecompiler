@@ -33,8 +33,8 @@ game_path = "%appdata%/YeahMaybe/ChoicerVoicer/game"
     ```sh
     choicecompiler.exe
     ```
-    > [!NOTE]  
-    > On other operating systems, this will be different.
+> [!NOTE]  
+> On other operating systems, this will be different.  
 
 2. Select a *dub pack* from the list by it's number
     ```sh
@@ -55,8 +55,9 @@ game_path = "%appdata%/YeahMaybe/ChoicerVoicer/game"
     ```sh
     my_file
     ```
-    > [!CAUTION]  
-    > File name must not end with `.mp4`
+> [!CAUTION]  
+> File name must not end with `.mp4`  
+
 5. Let FFmpeg run wild
 6. ???
 7. ***Profit***
